@@ -1,1 +1,2 @@
-pyglet
+pyglet==1.5.21
+pysinewave==0.0.6
