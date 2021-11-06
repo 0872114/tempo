@@ -6,8 +6,9 @@ class Tempo(pyglet.window.Window):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.batch = pyglet.graphics.Batch()
-        self.label = pyglet.text.Label('',
+        self.label = pyglet.text.Label('start tapping',
                                        font_name='Times New Roman',
                                        font_size=36,
                                        x=self.width // 2, y=self.height // 2,
@@ -17,7 +18,7 @@ class Tempo(pyglet.window.Window):
         self.dot = pyglet.shapes.Circle(x=self.width // 2,
                                         y=self.height // 2 - 72,
                                         radius=8,
-                                        color=(178, 11, 12),
+                                        color=(255, 255, 255),
                                         batch=self.batch)
         self.prev_time = None
         self.tik = 0
@@ -31,10 +32,7 @@ class Tempo(pyglet.window.Window):
         self.batch.draw()
 
     def update_dot(self, *args, **kwargs):
-        if self.tik:
-            self.flag = not self.flag
-        else:
-            self.flag = False
+        self.flag = not self.flag
 
     def on_key_press(self, *args, **kwargs):
         cur_time = time()
@@ -43,32 +41,27 @@ class Tempo(pyglet.window.Window):
             return
 
         tak = time() - self.prev_time
-        if len(self.taks) > 8:
-            self.taks.append((sum(self.taks) / len(self.taks) + tak) / 2)
-        else:
-            self.taks.append(tak)
+        self.taks.append(tak)
 
-        if len(self.taks) > 16:
-            self.taks = self.taks[1:]
-
-        if self.tik is None:
+        if not self.tik:
             self.tik = tak
+            self.taks = []
             label = 'keep tapping...'
         elif tak >= self.tik * 2:
             self.tik = None
             self.taks = []
             self.prev_time = None
             label = '[reset]'
-        elif len(self.taks) > 4:
+            pyglet.clock.unschedule(self.update_dot)
+            self.flag = False
+        elif len(self.taks):
             self.tik = sum(self.taks) / len(self.taks)
             bpm = round(60 / self.tik, 0)
             label = '{} BPM'.format(bpm)
             pyglet.clock.unschedule(self.update_dot)
-            pyglet.clock.schedule_interval(self.update_dot, self.tik)
+            pyglet.clock.schedule_interval(self.update_dot, self.tik / 2)
         else:
-            self.tik = (self.tik + tak) / 2
-            bpm = round(60 / self.tik, 0)
-            label = '~{} BPM'.format(bpm)
+            label = '...'
 
         self.label.text = label
         self.prev_time = cur_time
