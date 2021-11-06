@@ -1,11 +1,15 @@
 import pyglet
-from time import time
+from time import time, sleep
+from pysinewave import SineWave
+import threading
 
 
 class Tempo(pyglet.window.Window):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.sinewave = SineWave(pitch = 12, pitch_per_second = 10)
 
         self.batch = pyglet.graphics.Batch()
         self.label = pyglet.text.Label('start tapping',
@@ -31,10 +35,20 @@ class Tempo(pyglet.window.Window):
         self.dot.visible = self.flag
         self.batch.draw()
 
+    def play_sound(self, *args, **kwargs):
+        self.sinewave.play()
+        sleep(1/60)
+        self.sinewave.stop()
+
     def update_dot(self, *args, **kwargs):
         self.flag = not self.flag
+        if time() - self.prev_time > self.tik * 1.5 and self.flag and self.tik > 1/30:
+            t = threading.Thread(target=self.play_sound)
+            t.start()
 
     def on_key_press(self, *args, **kwargs):
+
+        label = '...'
         cur_time = time()
         if self.prev_time is None:
             self.prev_time = cur_time
@@ -60,8 +74,6 @@ class Tempo(pyglet.window.Window):
             label = '{} BPM'.format(bpm)
             pyglet.clock.unschedule(self.update_dot)
             pyglet.clock.schedule_interval(self.update_dot, self.tik / 2)
-        else:
-            label = '...'
 
         self.label.text = label
         self.prev_time = cur_time
